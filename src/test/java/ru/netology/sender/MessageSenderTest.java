@@ -2,7 +2,7 @@ package ru.netology.sender;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import ru.netology.entity.Country;
 import ru.netology.entity.Location;
@@ -15,8 +15,22 @@ import java.util.Map;
 public class MessageSenderTest {
 
     @ParameterizedTest
-    @ValueSource (strings = {"172.123.12.19", "96.123.12.19", "84.123.12.19"})
-    public void test_send_checkLanguage(String argument) {
+    @CsvSource(value = {"172.123.12.19, 96.123.12.19, 84.123.12.19"})
+    public void test_send_checkLanguage(String argumentRu, String argumentUS, String argumentGer) {
+
+        String expectedMessageForeign = "Welcome";
+        String expectedMessageRu = "Добро пожаловать";
+
+        String messageRu = getMessage(argumentRu);
+        String messageUS = getMessage(argumentUS);
+        String messageGer = getMessage(argumentGer);
+
+        Assertions.assertEquals(messageRu, expectedMessageRu);
+        Assertions.assertEquals(messageUS, expectedMessageForeign);
+        Assertions.assertEquals(messageGer, expectedMessageForeign);
+    }
+
+    static String getMessage(String argument) {
         GeoService geoService = Mockito.mock(GeoService.class);
         Mockito.when(geoService.byIp("172.123.12.19"))
                 .thenReturn(new Location("Moscow", Country.RUSSIA, null, 0));
@@ -39,13 +53,8 @@ public class MessageSenderTest {
 
         MessageSender messageSender = new MessageSenderImpl(geoService, localizationService);
 
-        String expectedMessage = "Welcome";
-//        String expectedMessage = "Добро пожаловать";
-
         Map<String, String> headers = new HashMap<String, String>();
         headers.put(MessageSenderImpl.IP_ADDRESS_HEADER, argument);
-        String message = messageSender.send(headers);
-
-        Assertions.assertEquals(message, expectedMessage);
+        return messageSender.send(headers);
     }
 }
